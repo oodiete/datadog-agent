@@ -36,7 +36,8 @@ MODULE_WHITELIST = [
     "allprocesses_windows.go",
     "allprocesses_windows_test.go",
     # All
-    "agent.pb.go"
+    "agent.pb.go",
+    "bbscache_test.go",
 ]
 
 # List of paths to ignore in misspell's output
