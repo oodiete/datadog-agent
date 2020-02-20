@@ -363,6 +363,9 @@ func initConfig(config Config) {
 	config.BindEnvAndSetDefault("cluster_agent.kubernetes_service_name", "datadog-cluster-agent")
 	config.BindEnvAndSetDefault("cluster_agent.tagging_fallback", false)
 	config.BindEnvAndSetDefault("metrics_port", "5000")
+	config.BindEnvAndSetDefault("cluster_agent.webhook.tls_cert_file", "/etc/webhook/certs/cert.pem")
+	config.BindEnvAndSetDefault("cluster_agent.webhook.tls_key_file", "/etc/webhook/certs/key.pem")
+	config.BindEnvAndSetDefault("cluster_agent.webhook.generate_tls_certificate", false)
 
 	// Metadata endpoints
 

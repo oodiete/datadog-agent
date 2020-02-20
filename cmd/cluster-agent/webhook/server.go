@@ -14,7 +14,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"flag"
 	"fmt"
 	"github.com/DataDog/datadog-agent/pkg/api/security"
 	stdLog "log"
@@ -42,9 +41,6 @@ func StartServer(sc clusteragent.ServerContext) error {
 	// IPC REST API server
 	agent.SetupHandlers(r, sc)
 
-	// Validate token for every request
-	//r.Use(validateToken)
-
 	// get the transport we're going to use under HTTP
 	var err error
 	listener, err = getListener()
@@ -53,21 +49,13 @@ func StartServer(sc clusteragent.ServerContext) error {
 		// no way we can recover from this error
 		return fmt.Errorf("Unable to create the api server: %v", err)
 	}
-	// Internal token
-	util.SetAuthToken()
 
-	// DCA client token
-	util.SetDCAAuthToken()
+	var TLSCert tls.Certificate
 
-	var certFile, keyFile string
+	if config.Datadog.GetBool("cluster_agent.webhook.generate_tls_certificate") {
+		// DEV: Code path used for testing this server without the need to create a certificate.
+		// DEV: Do not use in production.
 
-	flag.StringVar(&certFile, "tlsCertFile", "/etc/webhook/certs/cert.pem", "File containing the x509 Certificate for HTTPS.")
-	flag.StringVar(&keyFile, "tlsKeyFile", "/etc/webhook/certs/key.pem", "File containing the x509 private key to --tlsCertFile.")
-
-	// Create a TLS cert using the private key and certificate
-	TLSCert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		// TODO delete me
 		// create cert
 		hosts := []string{"127.0.0.1", "localhost"}
 		_, rootCertPEM, rootKey, err := security.GenerateRootCert(hosts, 2048)
@@ -80,9 +68,16 @@ func StartServer(sc clusteragent.ServerContext) error {
 			Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(rootKey),
 		})
 
-		TLSCert, err = tls.X509KeyPair(rootCertPEM, rootKeyPEM)
+		TLSCert, _ = tls.X509KeyPair(rootCertPEM, rootKeyPEM)
+	} else {
+		certFile := config.Datadog.GetString("cluster_agent.webhook.tls_cert_file")
+		keyFile := config.Datadog.GetString("cluster_agent.webhook.tls_key_file")
 
-		//return fmt.Errorf("invalid key pair: %v", err) // TODO restore me
+		// Create a TLS cert using the private key and certificate
+		TLSCert, err = tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return fmt.Errorf("invalid key pair: %v", err)
+		}
 	}
 
 	tlsConfig := tls.Config{
