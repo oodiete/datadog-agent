@@ -404,3 +404,23 @@ def make_kitchen_gitlab_yml(ctx):
 
     with open('.gitlab-ci.yml', 'w') as f:
         documents = yaml.dump(data, f, default_style='"')
+
+@task
+def check_gitlab_broken_dependencies(ctx):
+    """
+    Replaces .gitlab-ci.yml with one containing only the steps needed to run kitchen-tests
+    """
+    with open('.gitlab-ci.yml') as f:
+        data = yaml.load(f, Loader=yaml.FullLoader)
+
+    def is_unwanted(job, version):
+        e = job.get('except',{})
+        return isinstance(e, dict) and '$RELEASE_VERSION_{} == ""'.format(version) in e.get('variables',{})
+
+    for version in [6,7]:
+        for k,v in data.items():
+            if isinstance(v, dict) and not is_unwanted(v, version) and "needs" in v:
+                needed = v['needs']
+                for need in needed:
+                    if is_unwanted(data[need], version):
+                        print("{} needs on {} but it won't be built for A{}".format(k, need, version))
