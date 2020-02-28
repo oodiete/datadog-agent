@@ -31,6 +31,8 @@ func SetupHandlers(r *mux.Router, sc clusteragent.ServerContext) {
 }
 
 func getApplicationMutatingWebhook(w http.ResponseWriter, r *http.Request) {
+	log.Error("got a webhook request!") // TODO remove me
+
 	decoder := json.NewDecoder(r.Body)
 
 	// The AdmissionReview that was sent to the webhook
@@ -125,7 +127,7 @@ func getEnvMutator() []corev1.EnvVar {
 			},
 		},
 		{
-			Name:  "DEV_TEST_VERSION",
+			Name:  "DEV_VERSION",
 			Value: "dev-1",
 		},
 	}

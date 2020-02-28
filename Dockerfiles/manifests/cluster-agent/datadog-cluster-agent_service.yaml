@@ -8,7 +8,9 @@ spec:
   ports:
   - port: 5005 # Cluster Agent commands: has to be the same as the one exposed in the DCA.
     protocol: TCP
+    name: api
   - port: 5004 # K8S Admission Webhooks: has to be the same as the one exposed in the DCA.
     protocol: TCP
+    name: webhook
   selector:
     app: datadog-cluster-agent

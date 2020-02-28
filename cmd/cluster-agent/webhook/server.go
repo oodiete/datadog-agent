@@ -27,6 +27,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/api/util"
 	"github.com/DataDog/datadog-agent/pkg/clusteragent"
 	"github.com/DataDog/datadog-agent/pkg/config"
+	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 var (
@@ -52,7 +53,10 @@ func StartServer(sc clusteragent.ServerContext) error {
 
 	var TLSCert tls.Certificate
 
+	log.Errorf("V8 custom") // TODO remove me
 	if config.Datadog.GetBool("cluster_agent.webhook.generate_tls_certificate") {
+		log.Error("generating certificate!") // TODO remove me
+
 		// DEV: Code path used for testing this server without the need to create a certificate.
 		// DEV: Do not use in production.
 
@@ -70,6 +74,8 @@ func StartServer(sc clusteragent.ServerContext) error {
 
 		TLSCert, _ = tls.X509KeyPair(rootCertPEM, rootKeyPEM)
 	} else {
+		log.Error("reading certificate!") // TODO remove me
+
 		certFile := config.Datadog.GetString("cluster_agent.webhook.tls_cert_file")
 		keyFile := config.Datadog.GetString("cluster_agent.webhook.tls_key_file")
 
@@ -83,6 +89,8 @@ func StartServer(sc clusteragent.ServerContext) error {
 	tlsConfig := tls.Config{
 		Certificates: []tls.Certificate{TLSCert},
 	}
+
+	log.Error("started server!") // TODO remove me
 
 	srv := &http.Server{
 		Handler: r,
