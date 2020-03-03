@@ -20,6 +20,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/config"
 	"github.com/DataDog/datadog-agent/pkg/process/statsd"
 	"github.com/DataDog/datadog-agent/pkg/process/util"
+	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/clustername"
 )
 
 type checkPayload struct {
@@ -294,8 +295,8 @@ func (l *Collector) postToAPI(endpoint config.APIEndpoint, checkPath string, bod
 	req.Header.Add("X-Dd-Hostname", l.cfg.HostName)
 	req.Header.Add("X-Dd-Processagentversion", Version)
 	req.Header.Add("X-Dd-ContainerCount", strconv.Itoa(containerCount))
-	if l.cfg.ClusterId != "" {
-		req.Header.Add("X-Dd-Clusterid", l.cfg.ClusterId)
+	if cid, err = clustername.GetClusterID(); err == nil && cid != "" {
+		req.Header.Add("X-Dd-Clusterid", cid)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), ReqCtxTimeout)
