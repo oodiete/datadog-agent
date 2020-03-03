@@ -4,8 +4,8 @@ FROM mcr.microsoft.com/windows/${BASE_IMAGE}
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
-COPY datadog-agent-7-latest.amd64.msi .
-RUN msiexec /i datadog-agent-7-latest.amd64.msi /qn
+COPY datadog-agent-7-latest.amd64.msi install.ps1 ./
+RUN powershell ./install.ps1
 
 EXPOSE 8125/udp 8126/tcp
 
@@ -13,7 +13,7 @@ EXPOSE 8125/udp 8126/tcp
 RUN del C:/ProgramData/Datadog/datadog.yaml
 COPY entrypoint.ps1 .
 ADD entrypoint-ps1 ./entrypoint-ps1
-COPY datadog*.yaml C:/ProgramData/Datadog
+COPY datadog*.yaml C:/ProgramData/Datadog/
 
 ENTRYPOINT ["powershell", "./entrypoint.ps1"]
 
