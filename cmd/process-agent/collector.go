@@ -295,7 +295,7 @@ func (l *Collector) postToAPI(endpoint config.APIEndpoint, checkPath string, bod
 	req.Header.Add("X-Dd-Hostname", l.cfg.HostName)
 	req.Header.Add("X-Dd-Processagentversion", Version)
 	req.Header.Add("X-Dd-ContainerCount", strconv.Itoa(containerCount))
-	if cid, err = clustername.GetClusterID(); err == nil && cid != "" {
+	if cid, err := clustername.GetClusterID(); err == nil && cid != "" {
 		req.Header.Add("X-Dd-Clusterid", cid)
 	}
 
