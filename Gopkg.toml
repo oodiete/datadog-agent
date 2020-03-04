@@ -272,6 +272,3 @@
   name = "github.com/miekg/dns"
   version = "1.1.27"
 
-[[constraint]]
-  name = "github.com/google/uuid"
-  version = "v1.1.1"
