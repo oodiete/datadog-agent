@@ -4,6 +4,8 @@ FROM ${BASE_IMAGE}
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
 COPY datadog-agent-7-latest.amd64.zip install.ps1 ./
+RUN dir
+RUN pwsh -Command "echo Hello Dockerfile"
 RUN pwsh ./install.ps1
 
 EXPOSE 8125/udp 8126/tcp
