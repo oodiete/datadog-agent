@@ -19,6 +19,7 @@
   name = "github.com/Microsoft/go-winio"
   version = "~v0.4.7"
 
+
 [[constraint]]
   name = "github.com/hashicorp/consul"
   version = "~1.0.0"
@@ -66,6 +67,10 @@
 [[override]]
   name = "github.com/kubernetes/apimachinery"
   branch = "release-1.15"
+
+[[override]]
+  name = "k8s.io/klog"
+  revision = "3c831a8853083f467dbfc00f0e342a5911cae540"
 
 [[constraint]]
   name = "k8s.io/cri-api"
