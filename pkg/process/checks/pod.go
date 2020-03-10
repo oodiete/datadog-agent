@@ -16,6 +16,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/process/util"
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/tagger/collectors"
+	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/clustername"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/kubelet"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 
@@ -53,6 +54,11 @@ func (c *PodCheck) RealTime() bool { return false }
 func (c *PodCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.MessageBody, error) {
 	start := time.Now()
 	util, err := kubelet.GetKubeUtil()
+	if err != nil {
+		return nil, err
+	}
+
+	clusterID, err := clustername.GetClusterID()
 	if err != nil {
 		return nil, err
 	}
@@ -104,6 +110,7 @@ func (c *PodCheck) Run(cfg *config.AgentConfig, groupID int32) ([]model.MessageB
 			Pods:        chunked[i],
 			GroupId:     groupID,
 			GroupSize:   int32(groupSize),
+			ClusterId:   clusterID,
 		})
 	}
 
