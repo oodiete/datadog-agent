@@ -172,6 +172,33 @@ fail_on_non_triggered_tag:
     - echo CI_PIPELINE_SOURCE=$CI_PIPELINE_SOURCE CI_COMMIT_TAG=$CI_COMMIT_TAG
     - '[ "$CI_COMMIT_TAG" == "" -o "$CI_PIPELINE_SOURCE" != "push" ]'
 
+
+
+# run tests for eBPF code
+asdasdasd:
+  stage: fail_on_tag
+  tags: ["runner:docker", "size:large"]
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:v1907756-26d65dc-18.09.6
+  script:
+    - mount
+    - mount -t debugfs none /sys/kernel/debug
+    - |
+      cat > run-test.sh << EOF
+      #!/bin/sh
+      echo "Mounting debugfs"
+      mount -t debugfs none /sys/kernel/debug
+      mount
+      ls /sys/kernel/debug
+      echo "Installing deps"
+      pip3 install distro -c requirements.txt # needed for some of our invoke tasks until the builders image contain it
+      inv -e deps --verbose --dep-vendor-only
+      mkdir /opt/libbcc
+      CGO_LDFLAGS='-Wl,-rpath,/opt/libbcc/lib' inv -e system-probe.test
+      EOF
+    - chmod +x run-test.sh
+    - docker run -v $(pwd):/go/src/github.com/DataDog/datadog-agent --workdir /go/src/github.com/DataDog/datadog-agent --privileged --cap-add=SYS_ADMIN 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:v2195996-580f7f3 ./run-test.sh
+
+    
 #
 # deps_build
 #
@@ -310,19 +337,26 @@ run_tests_rpm-x64-py3:
 run_tests_ebpf:
   stage: source_test
   needs: ["fail_on_non_triggered_tag", "build_libbcc_x64"]
-  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:$DATADOG_AGENT_BUILDIMAGES
+  tags: ["runner:docker", "size:large"]
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:v1907756-26d65dc-18.09.6
   before_script:
-    - cd $SRC_PATH
-    - pip3 install distro -c requirements.txt # needed for some of our invoke tasks until the builders image contain it
-    - inv -e deps --verbose --dep-vendor-only
     # Retrieve libbcc from S3
-    - $S3_CP_CMD $S3_ARTIFACTS_URI/libbcc-amd64.tar.xz /tmp/libbcc.tar.xz
-    - mkdir /opt/libbcc
-    - tar -xvf /tmp/libbcc.tar.xz -C /opt/libbcc
-  tags: [ "runner:main", "size:large" ]
+    - $S3_CP_CMD $S3_ARTIFACTS_URI/libbcc-amd64.tar.xz libbcc.tar.xz # Retrieve libbcc from S3
   script:
-    # For now only check bpf bytes since we don't have a way to run eBPF tests without mounting a debugfs
-    - CGO_CFLAGS='-I/opt/libbcc/include' CGO_LDFLAGS='-Wl,-rpath,/opt/libbcc/lib -L/opt/libbcc/lib' inv -e system-probe.test --only-check-bpf-bytes
+    - |
+      cat > run-test.sh << EOF
+      #!/bin/sh
+      mount -t debugfs none /sys/kernel/debug
+      mount
+      ls /sys/kernel/debug
+      pip3 install distro -c requirements.txt # needed for some of our invoke tasks until the builders image contain it
+      inv -e deps --verbose --dep-vendor-only
+      mkdir /opt/libbcc
+      tar -xvf libbcc.tar.xz -C /opt/libbcc
+      CGO_CFLAGS='-I/opt/libbcc/include' CGO_LDFLAGS='-Wl,-rpath,/opt/libbcc/lib -L/opt/libbcc/lib' inv -e system-probe.test
+      EOF
+    - chmod +x run-test.sh
+    - docker run -v $(pwd):/go/src/github.com/DataDog/datadog-agent --workdir /go/src/github.com/DataDog/datadog-agent --cap-add=SYS_ADMIN 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:$DATADOG_AGENT_BUILDIMAGES ./run-test.sh
 
 # scan the dependencies for security vulnerabilities with snyk
 run_security_scan_test:
@@ -403,7 +437,7 @@ build_dogstatsd_static-deb_arm64:
     ARCH: arm64
   before_script:
     - source /root/.bashrc
-    # Hack to work around the cloning issue with arm runners
+    # Hack to work around the cloning issue with docker runners
     - mkdir -p $GOPATH/src/github.com/DataDog
     - cp -R $GOPATH/src/github.com/*/*/DataDog/datadog-agent $GOPATH/src/github.com/DataDog
     - cd $SRC_PATH
@@ -422,7 +456,7 @@ build_dogstatsd-deb_arm64:
     ARCH: arm64
   before_script:
     - source /root/.bashrc
-    # Hack to work around the cloning issue with arm runners
+    # Hack to work around the cloning issue with docker runners
     - mkdir -p $GOPATH/src/github.com/DataDog
     - cp -R $GOPATH/src/github.com/*/*/DataDog/datadog-agent $GOPATH/src/github.com/DataDog
     - cd $SRC_PATH
@@ -454,7 +488,7 @@ build_puppy_agent-deb_arm64:
     ARCH: arm64
   before_script:
     - source /root/.bashrc
-    # Hack to work around the cloning issue with arm runners
+    # Hack to work around the cloning issue with docker runners
     - mkdir -p $GOPATH/src/github.com/DataDog
     - cp -R $GOPATH/src/github.com/*/*/DataDog/datadog-agent $GOPATH/src/github.com/DataDog
     - cd $SRC_PATH
@@ -489,7 +523,7 @@ cluster_agent-build_arm64:
     ARCH: arm64
   before_script:
     - source /root/.bashrc
-    # Hack to work around the cloning issue with arm runners
+    # Hack to work around the cloning issue with docker runners
     - mkdir -p $GOPATH/src/github.com/DataDog
     - cp -R $GOPATH/src/github.com/*/*/DataDog/datadog-agent $GOPATH/src/github.com/DataDog
     - cd $SRC_PATH
@@ -556,7 +590,7 @@ run_dogstatsd_arm_size_test:
 
 .system-probe_build_common:
   before_script:
-    # Hack to work around the cloning issue with arm runners
+    # Hack to work around the cloning issue with docker runners
     - mkdir -p $GOPATH/src/github.com/DataDog
     - '[[ "$ARCH" == arm64 ]] && cp -R $GOPATH/src/github.com/*/*/DataDog/datadog-agent $GOPATH/src/github.com/DataDog'
     - cd $SRC_PATH
