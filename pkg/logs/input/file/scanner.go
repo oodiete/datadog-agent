@@ -118,7 +118,7 @@ func (s *Scanner) scan() {
 
 		if !isTailed && tailersLen < s.tailingLimit {
 			// create a new tailer tailing from the beginning of the file if no offset has been recorded
-			succeeded := s.startNewTailer(file, true)
+			succeeded := s.startNewTailer(file, Beginning)
 			if !succeeded {
 				// the setup failed, let's try to tail this file in the next scan
 				continue
@@ -185,23 +185,46 @@ func (s *Scanner) launchTailers(source *config.LogSource) {
 		if _, isTailed := s.tailers[file.Path]; isTailed {
 			continue
 		}
-		var tailFromBeginning bool
+
+		mode, found := TailingModeFromString(source.Config.TailingMode)
+		if !found {
+			log.Infof("Invalid or no tailing mode provided, tailing from the end of the file %v", file.Path)
+			source.Config.TailingMode = mode.String()
+		}
 		if source.Config.Identifier != "" {
 			// only sources generated from a service discovery will contain a config identifier,
 			// in which case we want to collect all logs.
 			// FIXME: better detect a source that has been generated from a service discovery.
-			tailFromBeginning = true
+			//tailFromBeginning = true
+			mode = Beginning
 		}
-		s.startNewTailer(file, tailFromBeginning)
+		s.startNewTailer(file, mode)
 	}
 }
 
 // startNewTailer creates a new tailer, making it tail from the last committed offset, the beginning or the end of the file,
 // returns true if the operation succeeded, false otherwise
-func (s *Scanner) startNewTailer(file *File, tailFromBeginning bool) bool {
+func (s *Scanner) startNewTailer(file *File, m TailingMode) bool {
 	tailer := s.createTailer(file, s.pipelineProvider.NextPipelineChan())
 
-	offset, whence, err := Position(s.registry, tailer.Identifier(), tailFromBeginning)
+	var offset int64
+	var whence int
+	var mode TailingMode
+	previousMode, _ := TailingModeFromString(s.registry.GetTailingMode(tailer.Identifier()))
+	if previousMode != m {
+		log.Infof("Tailing mode changed for %v from %v to %v", file.Path, previousMode, mode)
+		if m == Beginning {
+			// end -> beginning we read everything from the very beginning
+			mode = ForceBeginning
+		} else {
+			// beg -> end
+			mode = End
+		}
+	} else {
+		mode = m
+	}
+
+	offset, whence, err := Position(s.registry, tailer.Identifier(), mode)
 	if err != nil {
 		log.Warnf("Could not recover offset for file with path %v: %v", file.Path, err)
 	}

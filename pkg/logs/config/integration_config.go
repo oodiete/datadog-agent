@@ -27,7 +27,8 @@ type LogsConfig struct {
 	Port int    // Network
 	Path string // File, Journald
 
-	ExcludePaths []string `mapstructure:"exclude_paths" json:"exclude_paths"` // File
+	ExcludePaths []string `mapstructure:"exclude_paths" json:"exclude_paths"`   // File
+	TailingMode  string   `mapstructure:"start_position" json:"start_position"` // File
 
 	IncludeUnits  []string `mapstructure:"include_units" json:"include_units"`   // Journald
 	ExcludeUnits  []string `mapstructure:"exclude_units" json:"exclude_units"`   // Journald

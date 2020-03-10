@@ -21,25 +21,49 @@ func TestPosition(t *testing.T) {
 	var offset int64
 	var whence int
 
-	offset, whence, err = Position(registry, "", false)
+	offset, whence, err = Position(registry, "", End)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(0), offset)
 	assert.Equal(t, io.SeekEnd, whence)
 
-	offset, whence, err = Position(registry, "", true)
+	offset, whence, err = Position(registry, "", Beginning)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(0), offset)
 	assert.Equal(t, io.SeekStart, whence)
 
 	registry.SetOffset("123456789")
-	offset, whence, err = Position(registry, "", false)
+	offset, whence, err = Position(registry, "", End)
 	assert.Nil(t, err)
 	assert.Equal(t, int64(123456789), offset)
 	assert.Equal(t, io.SeekStart, whence)
 
+	registry.SetOffset("987654321")
+	offset, whence, err = Position(registry, "", Beginning)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(987654321), offset)
+	assert.Equal(t, io.SeekStart, whence)
+
 	registry.SetOffset("foo")
-	offset, whence, err = Position(registry, "", false)
+	offset, whence, err = Position(registry, "", End)
 	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), offset)
+	assert.Equal(t, io.SeekEnd, whence)
+
+	registry.SetOffset("bar")
+	offset, whence, err = Position(registry, "", Beginning)
+	assert.NotNil(t, err)
+	assert.Equal(t, int64(0), offset)
+	assert.Equal(t, io.SeekStart, whence)
+
+	registry.SetOffset("123456789")
+	offset, whence, err = Position(registry, "", ForceBeginning)
+	assert.Nil(t, err)
+	assert.Equal(t, int64(0), offset)
+	assert.Equal(t, io.SeekStart, whence)
+
+	registry.SetOffset("987654321")
+	offset, whence, err = Position(registry, "", ForceEnd)
+	assert.Nil(t, err)
 	assert.Equal(t, int64(0), offset)
 	assert.Equal(t, io.SeekEnd, whence)
 }
