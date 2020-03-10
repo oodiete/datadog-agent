@@ -76,3 +76,39 @@ build_agent7_windows:
     - Invoke-WebRequest -OutFile ${BUILD_CONTEXT}/datadog-agent-7-latest.amd64.zip https://s3.amazonaws.com/dd-agent-mstesting/builds/tagged/datadog-agent-7.18.0-rc.6.git.40.c6e5675-1-x86_64.zip
     - powershell -Command "docker build ${BUILD_ARG} --pull --file ${BUILD_CONTEXT}/windows/amd64/Dockerfile --tag ${TARGET_TAG} ${BUILD_CONTEXT}"
     - docker push ${TARGET_TAG}
+
+# build agent7_windows image
+build_agent7_windows2:
+  stage: image_build
+  tags: ["runner:windows-docker", "windowsversion:1809"]
+  variables:
+    IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent/agent
+    BUILD_CONTEXT: Dockerfiles/agent
+    TAG_SUFFIX: -7
+    BUILD_ARG: --build-arg BASE_IMAGE=mcr.microsoft.com/windows/servercore:1909
+  script:
+    - $ErrorActionPreference = "Stop"
+    - $SHORT_CI_COMMIT_SHA = ${CI_COMMIT_SHA}.Substring(0,7)
+    - $TARGET_TAG = "${IMAGE}:v${CI_PIPELINE_ID}-${SHORT_CI_COMMIT_SHA}${TAG_SUFFIX}-win1909-amd64"
+    #- cp ${OMNIBUS_PACKAGE_DIR}/datadog-agent-7*-x86_64.zip ${BUILD_CONTEXT}/datadog-agent-7-latest.amd64.zip
+    - Invoke-WebRequest -OutFile ${BUILD_CONTEXT}/datadog-agent-7-latest.amd64.zip https://s3.amazonaws.com/dd-agent-mstesting/builds/tagged/datadog-agent-7.18.0-rc.6.git.40.c6e5675-1-x86_64.zip
+    - powershell -Command "docker build ${BUILD_ARG} --pull --file ${BUILD_CONTEXT}/windows/amd64/Dockerfile --tag ${TARGET_TAG} ${BUILD_CONTEXT}"
+    - docker push ${TARGET_TAG}
+
+# build agent7_windows image
+build_agent7_windows3:
+  stage: image_build
+  tags: ["runner:windows-docker", "windowsversion:1809"]
+  variables:
+    IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent/agent
+    BUILD_CONTEXT: Dockerfiles/agent
+    TAG_SUFFIX: -7
+    BUILD_ARG: --build-arg BASE_IMAGE=mcr.microsoft.com/windows/servercore:1909
+  script:
+    - $ErrorActionPreference = "Stop"
+    - $SHORT_CI_COMMIT_SHA = ${CI_COMMIT_SHA}.Substring(0,7)
+    - $TARGET_TAG = "${IMAGE}:v${CI_PIPELINE_ID}-${SHORT_CI_COMMIT_SHA}${TAG_SUFFIX}-win1909-amd64"
+    #- cp ${OMNIBUS_PACKAGE_DIR}/datadog-agent-7*-x86_64.zip ${BUILD_CONTEXT}/datadog-agent-7-latest.amd64.zip
+    - Invoke-WebRequest -OutFile ${BUILD_CONTEXT}/datadog-agent-7-latest.amd64.zip https://s3.amazonaws.com/dd-agent-mstesting/builds/tagged/datadog-agent-7.18.0-rc.6.git.40.c6e5675-1-x86_64.zip
+    - powershell -Command "docker build --isolation=hyperv ${BUILD_ARG} --pull --file ${BUILD_CONTEXT}/windows/amd64/Dockerfile --tag ${TARGET_TAG} ${BUILD_CONTEXT}"
+    - docker push ${TARGET_TAG}
