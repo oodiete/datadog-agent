@@ -181,13 +181,10 @@ asdasdasd:
   image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:v1907756-26d65dc-18.09.6
   script:
     - mount
-    - mount -t debugfs none /sys/kernel/debug
     - |
       cat > run-test.sh << EOF
       #!/bin/sh
       echo "Mounting debugfs"
-      mount -t debugfs none /sys/kernel/debug
-      mount
       ls /sys/kernel/debug
       echo "Installing deps"
       pip3 install distro -c requirements.txt # needed for some of our invoke tasks until the builders image contain it
@@ -196,7 +193,8 @@ asdasdasd:
       CGO_LDFLAGS='-Wl,-rpath,/opt/libbcc/lib' inv -e system-probe.test
       EOF
     - chmod +x run-test.sh
-    - docker run -v $(pwd):/go/src/github.com/DataDog/datadog-agent --workdir /go/src/github.com/DataDog/datadog-agent --privileged --cap-add=SYS_ADMIN 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:v2195996-580f7f3 ./run-test.sh
+    - echo GO DOCKER GO
+    - docker run -v $(pwd):/go/src/github.com/DataDog/datadog-agent --workdir /go/src/github.com/DataDog/datadog-agent -v /sys/kernel/debug:/sys/kernel/debug --cap-add=SYS_ADMIN 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/datadog-agent-buildimages/system-probe_x64:v2195996-580f7f3 ./run-test.sh
 
     
 #
@@ -346,7 +344,6 @@ run_tests_ebpf:
     - |
       cat > run-test.sh << EOF
       #!/bin/sh
-      mount -t debugfs none /sys/kernel/debug
       mount
       ls /sys/kernel/debug
       pip3 install distro -c requirements.txt # needed for some of our invoke tasks until the builders image contain it
