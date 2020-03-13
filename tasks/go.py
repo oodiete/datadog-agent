@@ -172,7 +172,9 @@ def golangci_lint(ctx, targets, rtloader_root=None, build_tags=None):
         # as comma separated tokens in a string
         targets = targets.split(',')
 
-    tags = build_tags or get_default_build_tags()
+    # TODO: Find a better way to ensure we run the linter with linux_bpf
+    # without affecting the default_build_tags
+    tags = build_tags or get_default_build_tags().append("linux_bpf")
     _, _, env = get_build_flags(ctx, rtloader_root=rtloader_root)
     # we split targets to avoid going over the memory limit from circleCI
     for target in targets:
